@@ -1,6 +1,6 @@
 """Process one Line of the input file."""
 
-import difflib
+import myers
 
 
 def get_max_diff_area(a: str, b: str, /) -> tuple[int, int]:
@@ -28,10 +28,9 @@ def get_diff(
     """Get the difference of two strings."""
     front, back = get_max_diff_area(a, b)
     a, b = a[front:back], b[front:back]
-    matcher = difflib.SequenceMatcher(None, a, b)
     dict_a, dict_b = {}, {}
 
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    for tag, i1, i2, j1, j2 in myers.MyersSequenceMatcher(a, b).get_opcodes():
         match tag:
             case "replace":
                 dict_a[(i1 + front, i2 + front)] = "update"

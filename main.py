@@ -29,10 +29,16 @@ def get_files() -> tuple[str, str] | None:
 
 def apply_files() -> None:
     """Apply files opened to the `tkinter.Text` widget."""
+    old.configure(state="normal")
+    new.configure(state="normal")
+
     if files := get_files():
         old.insert("0.0", files[0])
         new.insert("0.0", files[1])
         process_files(files)
+
+    old.configure(state="disabled")
+    new.configure(state="disabled")
 
 
 def add_tags(widget: tkinter.Text, data: dict[tuple[int, int], str], row: int) -> None:
@@ -62,7 +68,6 @@ maliang.theme.set_color_mode("light")
 
 tk = maliang.Tk(title="Block Diff")
 tk.center()
-tk.alpha(0.90)
 
 cv = maliang.Canvas(tk, width=1280, height=720, auto_zoom=True)
 cv.place(width=1280, height=720)
@@ -82,14 +87,12 @@ menu.add_cascade(menu=file_menu, label="文件(F)")
 menu.add_cascade(menu=option_menu, label="选项(O)")
 menu.add_cascade(menu=help_menu, label="帮助(H)")
 
-old = tkinter.Text(cv, font=("Consolas", 12), wrap="none")
-new = tkinter.Text(cv, font=("Consolas", 12), wrap="none")
-old.place(x=0, y=0, width=640, height=720)
-new.place(x=640, y=0, width=640, height=720)
+old = tkinter.Text(cv, font=("Consolas", 12), wrap="none", state="disabled", relief="flat")
+new = tkinter.Text(cv, font=("Consolas", 12), wrap="none", state="disabled", relief="flat")
+old.place(width=640, height=720)
+new.place(width=640, height=720, x=640)
 
 highlight.register_color_tags(old, new)
-
-# old.configure(selectforeground="", selectbackground="blue")
 
 bar_old_v = tkinter.ttk.Scrollbar(old, orient="vertical", command=old.yview, cursor="arrow")
 bar_old_v.pack(side="right", fill="y")
