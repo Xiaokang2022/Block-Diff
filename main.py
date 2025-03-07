@@ -7,17 +7,55 @@ import maliang.theme
 
 import dialogs
 import highlight
+import process
+
+
+def get_files() -> tuple[str, str] | None:
+    """Get files"""
+    if files := dialogs.open_files():
+        files = tuple(reversed(files))
+        with open(files[0], "r", encoding="utf-8") as file:
+            old.delete("0.0", "end")
+            old_file = file.read()
+        with open(files[1], "r", encoding="utf-8") as file:
+            new.delete("0.0", "end")
+            new_file = file.read()
+        print("OPEN FILES:")
+        print(f"old_file: {files[0]}")
+        print(f"new_file: {files[1]}")
+        return old_file, new_file
+    return None
 
 
 def apply_files() -> None:
     """Apply files opened to the `tkinter.Text` widget."""
-    if files := dialogs.open_files():
-        with open(files[0], "r", encoding="utf-8") as file:
-            old.delete("0.0", "end")
-            old.insert("0.0", file.read())
-        with open(files[1], "r", encoding="utf-8") as file:
-            new.delete("0.0", "end")
-            new.insert("0.0", file.read())
+    if files := get_files():
+        old.insert("0.0", files[0])
+        new.insert("0.0", files[1])
+        process_files(files)
+
+
+def add_tags(widget: tkinter.Text, data: dict[tuple[int, int], str], row: int) -> None:
+    """Add tags to strings."""
+    for cols, tag in data.items():
+        widget.tag_add(tag, f"{row}.{cols[0]}", f"{row}.{cols[1]}")
+
+
+# def process_files(files: tuple[str, str]) -> None:
+#     """Process files."""
+#     for i, lines in enumerate(zip(files[0].split(), files[1].split())):
+#         ops = process.get_diff(lines[0], lines[1])
+#         add_tags(old, ops[0], i + 1)
+#         add_tags(new, ops[1], i + 1)
+
+
+def process_files(files: tuple[str, str]) -> None:
+    """Process files."""
+    ops = process.get_diff(*files)
+    for cols, tag in ops[0].items():
+        old.tag_add(tag, old.index(f"1.0 + {cols[0]} chars"), old.index(f"1.0 + {cols[1]} chars"))
+    for cols, tag in ops[1].items():
+        new.tag_add(tag, new.index(f"1.0 + {cols[0]} chars"), new.index(f"1.0 + {cols[1]} chars"))
 
 
 maliang.theme.set_color_mode("light")
@@ -44,12 +82,8 @@ menu.add_cascade(menu=file_menu, label="文件(F)")
 menu.add_cascade(menu=option_menu, label="选项(O)")
 menu.add_cascade(menu=help_menu, label="帮助(H)")
 
-old = tkinter.Text(cv, font=("Consolas", 12))
-new = tkinter.Text(cv, font=("Consolas", 12))
-# old.pack(side="left")
-# new.pack(side="right")
-# old.grid(row=0, column=0)
-# new.grid(row=0, column=1)
+old = tkinter.Text(cv, font=("Consolas", 12), wrap="none")
+new = tkinter.Text(cv, font=("Consolas", 12), wrap="none")
 old.place(x=0, y=0, width=640, height=720)
 new.place(x=640, y=0, width=640, height=720)
 
@@ -57,28 +91,16 @@ highlight.register_color_tags(old, new)
 
 # old.configure(selectforeground="", selectbackground="blue")
 
-bar_old = tkinter.ttk.Scrollbar(old, orient="vertical", command=old.yview, cursor="arrow")
-bar_old.pack(side="right", fill="y")
-bar_new = tkinter.ttk.Scrollbar(new, orient="vertical", command=new.yview, cursor="arrow")
-bar_new.pack(side="right", fill="y")
+bar_old_v = tkinter.ttk.Scrollbar(old, orient="vertical", command=old.yview, cursor="arrow")
+bar_old_v.pack(side="right", fill="y")
+bar_new_v = tkinter.ttk.Scrollbar(new, orient="vertical", command=new.yview, cursor="arrow")
+bar_new_v.pack(side="right", fill="y")
+bar_old_h = tkinter.ttk.Scrollbar(old, orient="horizontal", command=old.xview, cursor="arrow")
+bar_old_h.pack(side="bottom", fill="x")
+bar_new_h = tkinter.ttk.Scrollbar(new, orient="horizontal", command=new.xview, cursor="arrow")
+bar_new_h.pack(side="bottom", fill="x")
 
-old.configure(yscrollcommand=bar_old.set)
-new.configure(yscrollcommand=bar_new.set)
-
-# old.insert("1.0", "Hello, World!\n")
-# old.insert("2.0", "Hello, World!\n")
-# old.insert("3.0", "Hello, World!\n")
-# old.insert("4.0", "Hello, World!\n")
-# old.insert("5.0", "Hello, World!\n")
-# old.insert("6.0", "Hello, World!\n")
-# old.insert("7.0", "Hello, World!\n")
-
-# old.tag_add("insert", "1.0", "1.end")
-# old.tag_add("delete", "2.0", "2.end")
-# old.tag_add("update", "3.0", "3.end")
-# old.tag_add("copy", "4.0", "4.end")
-# old.tag_add("move", "5.0", "5.end")
-# old.tag_add("merge", "6.0", "6.end")
-# old.tag_add("split", "7.0", "7.end")
+old.configure(xscrollcommand=bar_old_h.set, yscrollcommand=bar_old_v.set)
+new.configure(xscrollcommand=bar_new_h.set, yscrollcommand=bar_new_v.set)
 
 tk.mainloop()
